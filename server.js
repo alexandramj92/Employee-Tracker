@@ -82,7 +82,7 @@ function runTool() {
 
 
 function allEmp(){
-    let query = "SELECT employee.EmployeeID, employee.first_name, employee.last_name, roles.title, department.dep_name, roles.salary, employee.ManagerID"
+    let query = "SELECT employee.EmployeeID, employee.first_name, employee.last_name, roles.title, department.dep_name, roles.salary, employee.ManagerID";
     query += " FROM roles"; 
     query += " LEFT OUTER JOIN department ON department.DepartmentID=roles.DepartmentID";
     query += " LEFT OUTER JOIN employee ON roles.RoleID=employee.RoleID"; 
@@ -194,10 +194,67 @@ function allEmpDep() {
       });
   }
   
-funtion addEmp(){
+  function addEmp() {
+    inquirer
+      .prompt([
+          
+        {
+        name: "firstName",
+        type: "input",
+        message: "What is the employee's first name?"
+        },
 
-}
+        {
+            name:"lastName",
+            type: "input",
+            message: "What is the employee's last name?"
+        },
+
+        {
+            name: "roleID",
+            type: "input",
+            message:"What is the employee's role ID? (1-Sales Lead, 2-Salesperson, 3-Lead Engineer. 4-Software Engineer, 5-Accountant, 6-Legal Team Lead, 7-Lawyer)"
+        },
+
+        {
+            name: "managerID",
+            type:"input",
+            message: "What is the employee's manager ID? (Suggestion: view all employees to get the employee's ID you would like to assign as manager to this employee"
+        }
+      
+      
+    ])
+      .then(function(answer) {
+        let firstName = answer.firstName;
+        let lastName = answer.lastName;
+        let roleID = answer.roleID;
+        let managerID = answer.managerID;
+
+        let query = "INSERT INTO employee (first_name, last_name, RoleID, ManagerID)"; 
+        query += ` VALUES ("${firstName}", "${lastName}", ${roleID}, ${managerID}); `; 
+        // query += "SELECT employee.EmployeeID, employee.first_name, employee.last_name, roles.title, department.dep_name, roles.salary, employee.ManagerID";
+        // query += " FROM roles"; 
+        // query += " LEFT OUTER JOIN department ON department.DepartmentID=roles.DepartmentID";
+        // query += " LEFT OUTER JOIN employee ON roles.RoleID=employee.RoleID"; 
+        // query += " ORDER BY EmployeeID;"; 
+            
+        
+        connection.query(query, async function(err, res) {
+            if(err) throw err;
+            try{
+                // console.table(res);
+                await allEmp();
+                // await runTool();
+            }
+            catch(e){
+                console.log(e);
+            }
+          
+        });
+      });
+  }
+
 
   
-// INSERT INTO table_name (column1, column2, column3, ...)
-// VALUES (value1, value2, value3, ...);
+// INSERT INTO employee (first_name, last_name, RoleID, ManagerID)
+// VALUES ("firstName", "lastName", roleID, managerID);
