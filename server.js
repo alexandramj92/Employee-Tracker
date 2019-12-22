@@ -2,7 +2,7 @@ let mysql = require("mysql");
 let inquirer = require("inquirer");
 let consoleTable = require("console.table");
 let managers = [];
-
+let managerID = 0;
 
 let connection = mysql.createConnection({
   host: "localhost",
@@ -164,6 +164,26 @@ function allEmpDep() {
 
   }
 
+  function allEmpManQuery(){
+    let query = "SELECT employee.EmployeeID, employee.first_name, employee.last_name, roles.title, department.dep_name, roles.salary, employee.ManagerID"; 
+        query += " FROM employee";  
+        query += " LEFT OUTER JOIN roles ON roles.RoleID=employee.RoleID"; 
+        query += " LEFT OUTER JOIN department ON department.DepartmentID=roles.DepartmentID";
+        query += " WHERE ?;"      
+        
+        connection.query(query, { ManagerID: managerID }, async function(err, res) {
+            if(err) throw err;
+            try{
+                console.table(res);
+                await runTool();
+            }
+            catch(e){
+                console.log(e);
+            }
+          
+        });
+  }
+
   function allEmpMan() {
     inquirer
       .prompt({
@@ -173,18 +193,19 @@ function allEmpDep() {
         choices: managers
       })
       .then(function(answer) {
-        let depChoice = answer.action;
+        let string = answer.action;
+        let manChoice = string.replace(/^"(.+(?="$))"$/, '$1');
         let query = "SELECT employee.EmployeeID, employee.first_name, employee.last_name, roles.title, department.dep_name, roles.salary, employee.ManagerID"; 
-        query += " FROM department";  
-        query += " LEFT OUTER JOIN roles ON roles.DepartmentID=department.DepartmentID";
-        query += " LEFT OUTER JOIN employee ON employee.RoleID=roles.RoleID"; 
+        query += " FROM employee";  
+        query += " LEFT OUTER JOIN roles ON roles.RoleID=employee.RoleID"; 
+        query += " LEFT OUTER JOIN department ON department.DepartmentID=roles.DepartmentID";
         query += " WHERE ?;"      
         
-        connection.query(query, { dep_name: depChoice }, async function(err, res) {
+        connection.query(query, { first_name: manChoice }, async function(err, res) {
             if(err) throw err;
             try{
-                console.table(res);
-                await runTool();
+                managerID = res[0].EmployeeID;
+                allEmpManQuery();
             }
             catch(e){
                 console.log(e);
@@ -232,19 +253,43 @@ function allEmpDep() {
 
         let query = "INSERT INTO employee (first_name, last_name, RoleID, ManagerID)"; 
         query += ` VALUES ("${firstName}", "${lastName}", ${roleID}, ${managerID}); `; 
-        // query += "SELECT employee.EmployeeID, employee.first_name, employee.last_name, roles.title, department.dep_name, roles.salary, employee.ManagerID";
-        // query += " FROM roles"; 
-        // query += " LEFT OUTER JOIN department ON department.DepartmentID=roles.DepartmentID";
-        // query += " LEFT OUTER JOIN employee ON roles.RoleID=employee.RoleID"; 
-        // query += " ORDER BY EmployeeID;"; 
+      
             
         
         connection.query(query, async function(err, res) {
             if(err) throw err;
             try{
-                // console.table(res);
                 await allEmp();
-                // await runTool();
+            }
+            catch(e){
+                console.log(e);
+            }
+          
+        });
+      });
+  }
+
+
+  function upEmpRole() {
+    inquirer
+      .prompt({
+        name: "action",
+        type: "list",
+        message: "Which employee would you like to update?",
+      })
+      .then(function(answer) {
+        let depChoice = answer.action;
+        let query = "SELECT employee.EmployeeID, employee.first_name, employee.last_name, roles.title, department.dep_name, roles.salary, employee.ManagerID"; 
+        query += " FROM department";  
+        query += " LEFT OUTER JOIN roles ON roles.DepartmentID=department.DepartmentID";
+        query += " LEFT OUTER JOIN employee ON employee.RoleID=roles.RoleID"; 
+        query += " WHERE ?;"      
+        
+        connection.query(query, { dep_name: depChoice }, async function(err, res) {
+            if(err) throw err;
+            try{
+                console.table(res);
+                await runTool();
             }
             catch(e){
                 console.log(e);
