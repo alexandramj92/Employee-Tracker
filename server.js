@@ -40,6 +40,7 @@ function runTool() {
               "Remove Employee",
               "Update Employee Role",
               "Update Employee Manager",
+              "Update Employee Department",
               "exit"
           ]
       })
@@ -71,6 +72,10 @@ function runTool() {
 
             case "Update Employee Manager":
                 upEmpMan();
+                break;
+
+            case "Update Employee Department":
+                upEmpDep();
                 break;
 
             case "exit":
@@ -240,7 +245,7 @@ function allEmpDep() {
         {
             name: "managerID",
             type:"input",
-            message: "What is the employee's manager ID? (Suggestion: view all employees to get the employee's ID you would like to assign as manager to this employee"
+            message: "What is the employee's manager ID? (Suggestion: view all employees to get the employee's ID you would like to assign as manager to this employee)"
         }
       
       
@@ -272,24 +277,99 @@ function allEmpDep() {
 
   function upEmpRole() {
     inquirer
-      .prompt({
-        name: "action",
-        type: "list",
-        message: "Which employee would you like to update?",
-      })
-      .then(function(answer) {
-        let depChoice = answer.action;
-        let query = "SELECT employee.EmployeeID, employee.first_name, employee.last_name, roles.title, department.dep_name, roles.salary, employee.ManagerID"; 
-        query += " FROM department";  
-        query += " LEFT OUTER JOIN roles ON roles.DepartmentID=department.DepartmentID";
-        query += " LEFT OUTER JOIN employee ON employee.RoleID=roles.RoleID"; 
-        query += " WHERE ?;"      
+      .prompt([
         
-        connection.query(query, { dep_name: depChoice }, async function(err, res) {
+        {
+        name: "upEmp",
+        type: "input",
+        message: "Which employee would you like to update?"
+        },
+
+        {
+        name: "newRole",
+        type: "input",
+        message: "What is their new role?"
+        }
+    ])
+      .then(function(answer) {
+        let upEmp = answer.upEmp;
+        let newRole = answer.newRole;
+        let query = "UPDATE roles";
+        query += " LEFT OUTER JOIN department ON department.DepartmentID=roles.DepartmentID";
+        query += " LEFT OUTER JOIN employee ON roles.RoleID=employee.RoleID"; 
+        query += ` SET title = "${newRole}"`;
+        query += ` WHERE first_name = "${upEmp}";`; 
+        
+        connection.query(query, async function(err, res) {
             if(err) throw err;
             try{
-                console.table(res);
-                await runTool();
+                await allEmp();
+            }
+            catch(e){
+                console.log(e);
+            }
+          
+        });
+      });
+  }
+
+  function upEmpMan() {
+    inquirer
+      .prompt([
+        
+        {
+        name: "upMan",
+        type: "input",
+        message: "Which employee would you like to update?"
+        },
+
+        {
+        name: "newManID",
+        type: "input",
+        message: "What is their new manager? (Suggestion: view all employees to idenfify the employee ID you would like to use to update the manager)"
+        }
+    ])
+      .then(function(answer) {
+        let upMan = answer.upMan;
+        let newManID = answer.newManID;
+        let query = "UPDATE employee";
+        query += " LEFT OUTER JOIN roles ON roles.RoleID=employee.RoleID"; 
+        query += " LEFT OUTER JOIN department ON department.DepartmentID=roles.DepartmentID";
+        query += ` SET ManagerID = "${newManID}"`;
+        query += ` WHERE first_name = "${upMan}";`; 
+        
+        connection.query(query, async function(err, res) {
+            if(err) throw err;
+            try{
+                await allEmp();
+            }
+            catch(e){
+                console.log(e);
+            }
+          
+        });
+      });
+  }
+
+  function remEmp() {
+    inquirer
+      .prompt(
+        
+        {
+        name: "empName",
+        type: "input",
+        message: "Which employee would you like to remove?"
+        }
+    )
+      .then(function(answer) {
+        let empName = answer.empName;
+        let query = "DELETE FROM employee";
+        query += ` WHERE first_name = "${empName}";`; 
+        
+        connection.query(query, async function(err, res) {
+            if(err) throw err;
+            try{
+                await allEmp();
             }
             catch(e){
                 console.log(e);
@@ -300,6 +380,42 @@ function allEmpDep() {
   }
 
 
+  function upEmpDep() {
+    inquirer
+      .prompt([
+        
+        {
+        name: "upEmp",
+        type: "input",
+        message: "Which employee would you like to update?"
+        },
+
+        {
+        name: "newDep",
+        type: "input",
+        message: "What is their new department?"
+        }
+    ])
+      .then(function(answer) {
+        let upEmp = answer.upEmp;
+        let newDep = answer.newDep;
+        let query = "UPDATE department";
+        query += " LEFT OUTER JOIN roles ON department.DepartmentID=roles.DepartmentID";
+        query += " LEFT OUTER JOIN employee ON roles.RoleID=employee.RoleID"; 
+        query += ` SET dep_name = "${newDep}"`;
+        query += ` WHERE first_name = "${upEmp}";`; 
+        
+        connection.query(query, async function(err, res) {
+            if(err) throw err;
+            try{
+                await allEmp();
+            }
+            catch(e){
+                console.log(e);
+            }
+          
+        });
+      });
+  }
+
   
-// INSERT INTO employee (first_name, last_name, RoleID, ManagerID)
-// VALUES ("firstName", "lastName", roleID, managerID);
